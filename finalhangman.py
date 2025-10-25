@@ -1,144 +1,108 @@
-## HANG MAN ##
-
-alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
-
-penalty = 0
-
-letter_tried = []
-
-word_tried = []
-
+import random
 import time
 
-# To choose and print a random file from the word.txt,
-# then get it hidden.
-import random
+alphabet = list("abcdefghijklmnopqrstuvwxyz")
 
+penalty = 0
+letter_tried = []
+word_tried = []
+
+# Load words
 with open("words.txt") as file:
-	words = file.read().splitlines()
+    words = file.read().splitlines()
 
 x = random.choice(words)
+print(x)
+answer = ["_"] * len(x)
 
-print (x)
 
-answer=["_"]*len(x)
+def gamebase():
+    uinput = input("Choose a letter or guess the full word: ").lower()
+    if len(uinput) > 1:
+        wordp(uinput)
+        word_tried.append(uinput)
+    else:
+        letterp(uinput)
+        letter_tried.append(uinput)
 
-# Ask for an input and execute func depending on the input
-def gamebase(n):
-	uinput=input("Pls choose a letter, or give me a full answer : ")
-	if len(uinput) > 1:
-		wordp(uinput)
-		word_tried.append(uinput)
-	else:
-		letterp(uinput)
-		letter_tried.append(uinput)
 
-# For input as a word
 def wordp(n):
-	global penalty
-	global answer
-	if list(n) == list(x):
-		answer = list(x)
-	else:
-		penalty += 5
-		print ("Nop but nt, u have", 12-penalty, "tries left, ")
+    global penalty, answer
+    if list(n) == list(x):
+        answer = list(x)
+    else:
+        penalty += 5
+        print("Nope! You have", 12 - penalty, "tries left.")
 
-# For input as a letter
+
 def letterp(n):
-	global penalty
-	global uinput
-	global answer
-	if n in alphabet:
-		if n in x :
-			for i, y in enumerate(x):
-				if y == n:
-					answer[i]=n
-			print (*answer)
-		else:
-			penalty += 1
-			print ("Nop, but nt, u have", 12-penalty, "tries left,")
-	else :
-		penalty += 1
-		print ("U think i'm stupid or smth ?! +1 penalty for ur recklessness ")
+    global penalty, answer
+    if n in alphabet:
+        if n in x:
+            for i, y in enumerate(x):
+                if y == n:
+                    answer[i] = n
+            print(" ".join(answer))
+        else:
+            penalty += 1
+            print("Nope! You have", 12 - penalty, "tries left.")
+    else:
+        penalty += 1
+        print("Invalid input! +1 penalty.")
 
-# To make the func run until u get it right (with helps printed)
-def hangman(n):
-	while "_" in answer:
-		print ("The random word contains : ", len(x), "letters")
-		print ("U actually have : ", penalty, "penalties")
-		print ("U have already gave me : ", ", ".join(letter_tried))
-		print ("U already tried : ", ", ".join(word_tried))
-		gamebase(n)
-		if penalty >= 12:
-			print ("U loose !!!!")
-			break
 
-		if answer == list(x):
-			print ("Wp 2 u, u find the good word !! Wich was : ", "".join(x))
-			break
+def hangman():
+    global penalty, letter_tried, word_tried, answer
+    penalty = 0
+    letter_tried = []
+    word_tried = []
+    answer = ["_"] * len(x)
 
-# Create a time score, if it's lower than last best, print success text and save it in the file
+    while "_" in answer:
+        print("\nThe word has", len(x), "letters.")
+        print("Penalties:", penalty)
+        print("Letters tried:", ", ".join(letter_tried))
+        print("Words tried:", ", ".join(word_tried))
+        print("Current progress:", " ".join(answer))
+        gamebase()
+
+        if penalty >= 12:
+            print("\nYou lose! The word was:", x)
+            break
+
+        if answer == list(x):
+            print("\nCongrats! The word was:", x)
+            break
+
+
 def p_score(n):
-	with open("scores.txt", "r+") as scores_file:
-		b_score = float(scores_file.read())
-		if n <= b_score:
-			print ("WOW !! U just made a new best score !!")
-			print ("U find the good answer in", n)
-			scores_file.seek(0)
-			scores_file.write(str(n))
-			scores_file.truncate()
-		else:
-			print ("Nt but the best score remains : ", b_score)
-
-# Treat the player answer, and create a timer if yes/y
-def p_wanna_p(n):
-	if "yes" in n or n == "y":
-		return True
-		start = time.time()
-		hangman(answer)
-		player_time = round((time.time()- start), 2)
-		p_score(player_time)
-	else:
-		return False
-		print("See ya !!")
-
-# Ask the player if they wanna play, and use the score.py file
-p_input = input("Do u wanna play ? (yes/no answer) : ").lower()
-p_wanna_p(p_input)
+    try:
+        with open("scores.txt", "r+") as f:
+            content = f.read().strip()
+            b_score = float(content) if content else float("inf")
+            if n <= b_score:
+                print("New best time!", n, "seconds")
+                f.seek(0)
+                f.write(str(n))
+                f.truncate()
+            else:
+                print("Best score remains:", b_score)
+    except FileNotFoundError:
+        with open("scores.txt", "w") as f:
+            f.write(str(n))
+        print("First score recorded:", n, "seconds")
 
 
-
-## PY GAME ##
-import pygame
-from sys import exit
-
-# La taile de la fenetre
-game_width = 1200
-game_height = 800
-
-# Le nom de la fenêtre
-nom_fenetre = "Hangman Game"
-
-# Initialisation du jeu
-pygame.init()
-window = pygame.display.set_mode((game_width, game_height))
-pygame.display.set_caption(nom_fenetre)
-clock = pygame.time.Clock()
-
-# L'image en fond
-fond = pygame.image.load("pirate_background.png").convert()
-fond = pygame.transform.scale(fond, (game_width, game_height))
+def p_wanna_p():
+    p_input = input("Do you wanna play? (yes/no): ").lower()
+    if "yes" in p_input or p_input == "y":
+        start = time.time()
+        hangman()
+        player_time = round((time.time() - start), 2)
+        p_score(player_time)
+    else:
+        print("See ya!")
 
 
-
-# Boucle qui fait tourner le jeu
-while True:
-	for event in pygame.event.get():
-		if event.type == pygame.QUIT:
-			pygame.quit()
-			exit()
-		p_input = input("Do u wanna play ? (yes/no answer) : ").lower
-
-	window.blit(fond, (0,0))
-	pygame.display.update()
-	clock.tick(90)
+# Start
+p_wanna_p()
